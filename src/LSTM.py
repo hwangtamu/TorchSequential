@@ -1,20 +1,29 @@
+import torch
 import torch.nn.functional as F
 import torch.nn as nn
+from torch.autograd import Variable
+
 
 class SequentialMNIST(nn.Module):
-    def __init__(self):
+    def __init__(self, batch_size):
         super(SequentialMNIST, self).__init__()
-        self.conv1 = nn.Conv2d(1, 10, kernel_size=5)
-        self.conv2 = nn.Conv2d(10, 20, kernel_size=5)
-        self.conv2_drop = nn.Dropout2d()
-        self.fc1 = nn.Linear(320, 50)
-        self.fc2 = nn.Linear(50, 10)
+        self.hidden_dim = 32
+        self.lstm = nn.LSTM(28, self.hidden_dim)
+        self.hidden2label = nn.Linear(self.hidden_dim, 10)
+        self.batch_size = batch_size
+        # self.hidden = self.init_hidden()
 
     def forward(self, x):
-        x = F.relu(F.max_pool2d(self.conv1(x), 2))
-        x = F.relu(F.max_pool2d(self.conv2_drop(self.conv2(x)), 2))
-        x = x.view(-1, 320)
-        x = F.relu(self.fc1(x))
-        x = F.dropout(x, training=self.training)
-        x = self.fc2(x)
-        return F.log_softmax(x, dim=1)
+        #print(x.size())
+        x = x.permute(1,2,0,3)[0]
+        #x = x.view(28, self.batch_size, -1)
+        #print(x.size())
+        lstm_out, hidden = self.lstm(x)
+        y = self.hidden2label(lstm_out[-1])
+        log_probs = F.log_softmax(y)
+        return log_probs
+
+    # def init_hidden(self):
+    #     h0 = Variable(torch.zeros(1, self.batch_size, self.hidden_dim).cuda())
+    #     c0 = Variable(torch.zeros(1, self.batch_size, self.hidden_dim).cuda())
+    #     return (h0, c0)
