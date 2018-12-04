@@ -7,7 +7,7 @@ from torch.autograd import Variable
 class SequentialMNIST(nn.Module):
     def __init__(self, batch_size):
         super(SequentialMNIST, self).__init__()
-        self.hidden_dim = 32
+        self.hidden_dim = 16
         self.lstm = nn.LSTM(28, self.hidden_dim)
         self.hidden2label = nn.Linear(self.hidden_dim, 10)
         self.batch_size = batch_size

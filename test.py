@@ -21,6 +21,7 @@ def train(args, model, device, train_loader, optimizer, epoch):
         # print(output, target)
         loss_function = nn.CrossEntropyLoss()
         loss = loss_function(output, Variable(target))
+        # loss = F.nll_loss(output, target, reduction='sum')
         loss.backward()
         optimizer.step()
         if batch_idx % args.log_interval == 0:
