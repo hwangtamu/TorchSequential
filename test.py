@@ -10,6 +10,9 @@ from src.data import MNIST
 from torch.autograd import Variable
 import numpy as np
 
+#loss_function = nn.MSELoss()
+loss_function = nn.CrossEntropyLoss()
+
 
 def train(args, model, device, train_loader, optimizer, epoch):
     model.train()
@@ -17,11 +20,16 @@ def train(args, model, device, train_loader, optimizer, epoch):
         data, target = data.to(device), target.to(device)
         optimizer.zero_grad()
         output = model(data)
+        # print(data.size())
+        # print(torch.reshape(target,(64, -1)))
+        # y_onehot = torch.cuda.FloatTensor(output.size(0),output.size(1))
+        # y_onehot.zero_()
+        # y_onehot.scatter_(1, torch.reshape(target,(target.size(0), -1)), 1)
+        # print(output, y_onehot)
+        # loss = loss_function(output, y_onehot)
 
-        # print(output, target)
-        loss_function = nn.CrossEntropyLoss()
-        loss = loss_function(output, Variable(target))
-        # loss = F.nll_loss(output, target, reduction='sum')
+        #loss = loss_function(output, Variable(target))
+        loss = F.nll_loss(output, target, reduction='sum')
         loss.backward()
         optimizer.step()
         if batch_idx % args.log_interval == 0:
@@ -53,7 +61,7 @@ def main():
                         help='input batch size for training (default: 64)')
     parser.add_argument('--test-batch-size', type=int, default=1000, metavar='N',
                         help='input batch size for testing (default: 1000)')
-    parser.add_argument('--epochs', type=int, default=100, metavar='N',
+    parser.add_argument('--epochs', type=int, default=50, metavar='N',
                         help='number of epochs to train (default: 10)')
     parser.add_argument('--lr', type=float, default=0.01, metavar='LR',
                         help='learning rate (default: 0.01)')
@@ -77,14 +85,14 @@ def main():
     train_loader = data.trainloader
     test_loader = data.testloader
 
-
-
-    model = SequentialMNIST(64).to(device)
+    model = SequentialMNIST(64, 256).to(device)
     optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
 
     for epoch in range(1, args.epochs + 1):
         train(args, model, device, train_loader, optimizer, epoch)
         test(args, model, device, test_loader)
+
+    torch.save(model, './model/temp/')
 
 
 if __name__ == '__main__':
