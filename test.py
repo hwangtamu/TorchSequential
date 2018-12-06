@@ -92,8 +92,20 @@ def main():
         train(args, model, device, train_loader, optimizer, epoch)
         test(args, model, device, test_loader)
 
-    torch.save(model, './model/temp/')
+    torch.save(model, './model/temp/tmp.model')
 
 
 if __name__ == '__main__':
-    main()
+    path = './model/temp/tmp.model'
+    data = MNIST()
+    train_loader = data.trainloader
+    test_loader = data.testloader
+    device = torch.device("cuda")
+    model = SequentialMNIST(64, 256).to(device)
+    with torch.no_grad():
+        for data, target in test_loader:
+            data, target = data.to(device), target.to(device)
+            output = model.show_pred(data, path)
+            for i in range(target.size(0)):
+                print(target[i].cpu().numpy(), output[i].cpu().numpy())
+    #main()

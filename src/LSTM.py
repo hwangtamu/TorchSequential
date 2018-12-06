@@ -41,12 +41,13 @@ class SequentialMNIST(nn.Module):
         x = x.permute(1,2,0,3)[0]
         self.eval()
         lstm_out, hidden = self.lstm(x)
-        print(lstm_out.size())
-        # tmp = []
-        # for o in lstm_out:
-        #     y = self.hidden2label(o)
-        #     tmp += [torch.max(y, 0)]
-
+        #print(lstm_out.size())
+        tmp = []
+        for o in lstm_out:
+            y = self.hidden2label(o)
+            tmp += [y.max(1)[1]]
+        out = torch.stack(tmp, dim=1)
+        return out
 
 
 
