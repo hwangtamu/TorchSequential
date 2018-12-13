@@ -54,7 +54,7 @@ def test(args, model, device, test_loader):
         test_loss, correct, len(test_loader.dataset),
         100. * correct / len(test_loader.dataset)))
 
-def main():
+def main(hidden=256):
     # Training settings
     parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
     parser.add_argument('--batch-size', type=int, default=64, metavar='N',
@@ -85,27 +85,29 @@ def main():
     train_loader = data.trainloader
     test_loader = data.testloader
 
-    model = SequentialMNIST(64, 256).to(device)
+    model = SequentialMNIST(64, hidden).to(device)
     optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
 
     for epoch in range(1, args.epochs + 1):
         train(args, model, device, train_loader, optimizer, epoch)
         test(args, model, device, test_loader)
 
-    torch.save(model, './model/temp/tmp.model')
+    torch.save(model, './model/new/'+str(i)+'_lstm.model')
 
 
 if __name__ == '__main__':
-    path = './model/temp/tmp.model'
-    data = MNIST()
-    train_loader = data.trainloader
-    test_loader = data.testloader
-    device = torch.device("cuda")
-    model = SequentialMNIST(64, 256).to(device)
-    with torch.no_grad():
-        for data, target in test_loader:
-            data, target = data.to(device), target.to(device)
-            output = model.show_pred(data, path)
-            for i in range(target.size(0)):
-                print(target[i].cpu().numpy(), output[i].cpu().numpy())
+    # path = './model/temp/tmp.model'
+    # data = MNIST()
+    # train_loader = data.trainloader
+    # test_loader = data.testloader
+    # device = torch.device("cuda")
+    # model = SequentialMNIST(64, 256).to(device)
+    # with torch.no_grad():
+    #     for data, target in test_loader:
+    #         data, target = data.to(device), target.to(device)
+    #         output = model.show_pred(data, path)
+    #         for i in range(target.size(0)):
+    #             print(target[i].cpu().numpy(), output[i].cpu().numpy())
     #main()
+    for i in [4,6,8,10,12,16,32,64,128,256]:
+        main(i)
