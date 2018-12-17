@@ -27,7 +27,6 @@ class SequentialMNIST(nn.Module):
 
     def show_pred(self, x, path=None):
         r"""
-
         :param x: input in shape [time_step, 1, batch_size, input_dim]
         :return:
         """
@@ -41,12 +40,15 @@ class SequentialMNIST(nn.Module):
         x = x.permute(1,2,0,3)[0]
         self.eval()
         lstm_out, hidden = self.lstm(x)
-        #print(lstm_out.size())
-        tmp = []
+        # print(lstm_out.size())
+        tmp_lab = []
+        tmp_val = []
         for o in lstm_out:
             y = self.hidden2label(o)
-            tmp += [y.max(1)[1]]
-        out = torch.stack(tmp, dim=1)
+            tmp_lab += [y.max(1)[1]]
+            tmp_val += [F.softmax(y, dim=0)]
+        print(torch.stack(tmp_val, dim=1).size())
+        out = torch.stack(tmp_lab, dim=1)
         return out
 
 

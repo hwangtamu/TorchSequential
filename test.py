@@ -37,7 +37,7 @@ def train(args, model, device, train_loader, optimizer, epoch):
                 epoch, batch_idx * len(data), len(train_loader.dataset),
                 100. * batch_idx / len(train_loader), loss.item()))
 
-def test(args, model, device, test_loader):
+def test(model, device, test_loader):
     model.eval()
     test_loss = 0
     correct = 0
@@ -90,24 +90,25 @@ def main(hidden=256):
 
     for epoch in range(1, args.epochs + 1):
         train(args, model, device, train_loader, optimizer, epoch)
-        test(args, model, device, test_loader)
+        test(model, device, test_loader)
 
-    torch.save(model, './model/new/'+str(i)+'_lstm.model')
+    torch.save(model, './model/new/'+str(i)+'_lstm1.model')
 
 
 if __name__ == '__main__':
-    # path = './model/temp/tmp.model'
-    # data = MNIST()
-    # train_loader = data.trainloader
-    # test_loader = data.testloader
-    # device = torch.device("cuda")
-    # model = SequentialMNIST(64, 256).to(device)
-    # with torch.no_grad():
-    #     for data, target in test_loader:
-    #         data, target = data.to(device), target.to(device)
-    #         output = model.show_pred(data, path)
-    #         for i in range(target.size(0)):
-    #             print(target[i].cpu().numpy(), output[i].cpu().numpy())
-    #main()
-    for i in [4,6,8,10,12,16,32,64,128,256]:
-        main(i)
+    n_hidden = 8
+    path = './model/new/'+str(n_hidden)+'_lstm1.model'
+    data = MNIST()
+    train_loader = data.trainloader
+    test_loader = data.testloader
+    device = torch.device("cuda")
+    model = SequentialMNIST(64, n_hidden).to(device)
+    with torch.no_grad():
+        for data, target in test_loader:
+            data, target = data.to(device), target.to(device)
+            output = model.show_pred(data, path)
+            for i in range(target.size(0)):
+                print(target[i].cpu().numpy(), output[i].cpu().numpy())
+    test(model,device, test_loader)
+    # for i in [4,6,8,10,12,16,32,64,128,256]:
+    #     main(i)
