@@ -108,7 +108,7 @@ if __name__ == '__main__':
             data, target = data.to(device), target.to(device)
             output = model.show_pred(data, path)
             for i in range(target.size(0)):
-                print(target[i].cpu().numpy(), output[i].cpu().numpy())
+                print(target[i].cpu().numpy(), output[0][i].cpu().numpy(), output[1][i].cpu().numpy())
     test(model,device, test_loader)
     # for i in [4,6,8,10,12,16,32,64,128,256]:
     #     main(i)

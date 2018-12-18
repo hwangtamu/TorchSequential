@@ -46,10 +46,10 @@ class SequentialMNIST(nn.Module):
         for o in lstm_out:
             y = self.hidden2label(o)
             tmp_lab += [y.max(1)[1]]
-            tmp_val += [F.softmax(y, dim=0)]
-        print(torch.stack(tmp_val, dim=1).size())
-        out = torch.stack(tmp_lab, dim=1)
-        return out
+            tmp_val += [F.softmax(y, dim=1).max(1)[0]]
+        val = torch.stack(tmp_val, dim=1)
+        lab = torch.stack(tmp_lab, dim=1)
+        return val, lab
 
 
 
