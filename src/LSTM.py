@@ -5,17 +5,25 @@ from torch.autograd import Variable
 
 
 class SequentialMNIST(nn.Module):
-    def __init__(self, batch_size, hidden_size):
+    def __init__(self, batch_size, hidden_size, lesion=None):
         super(SequentialMNIST, self).__init__()
         self.hidden_dim = hidden_size
         self.lstm = nn.LSTM(28, self.hidden_dim)
         self.hidden2label = nn.Linear(self.hidden_dim, 10)
         self.batch_size = batch_size
         self.model = None
+        self.blocked = None
+        self.lesion = lesion
+        if self.lesion:
+            self.blocked = torch.randperm(hidden_size)[:int(hidden_size*lesion)]
+            # print(self.blocked)
 
     def forward(self, x):
         x = x.permute(1,2,0,3)[0]
         lstm_out, hidden = self.lstm(x)
+        # print(lstm_out.size())
+        if self.lesion:
+            lstm_out[:, :,self.blocked] = 0
         y = self.hidden2label(lstm_out[-1])
         log_probs = F.log_softmax(y)
         return log_probs
@@ -25,11 +33,7 @@ class SequentialMNIST(nn.Module):
     #     c0 = Variable(torch.zeros(1, self.batch_size, self.hidden_dim).cuda())
     #     return (h0, c0)
 
-    def show_pred(self, x, path=None):
-        r"""
-        :param x: input in shape [time_step, 1, batch_size, input_dim]
-        :return:
-        """
+    def load(self, path=None):
         if not self.model:
             if path:
                 self.model = torch.load(path)
@@ -37,13 +41,23 @@ class SequentialMNIST(nn.Module):
                 self.hidden2label = self.model.hidden2label
             else:
                 raise AttributeError("Model not loaded.")
+
+    def show_pred(self, x, path=None):
+        r"""
+        :param x: input in shape [time_step, 1, batch_size, input_dim]
+        :return:
+        """
+        self.load(path)
         x = x.permute(1,2,0,3)[0]
+        # print(x.size())
         self.eval()
-        lstm_out, hidden = self.lstm(x)
+        lstm_out, hidden= self.lstm(x)
         # print(lstm_out.size())
         tmp_lab = []
         tmp_val = []
         for o in lstm_out:
+            if self.lesion:
+                o[:,self.blocked] = 0
             y = self.hidden2label(o)
             tmp_lab += [y.max(1)[1]]
             tmp_val += [F.softmax(y, dim=1).max(1)[0]]
@@ -51,7 +65,13 @@ class SequentialMNIST(nn.Module):
         lab = torch.stack(tmp_lab, dim=1)
         return val, lab
 
+    def get_hidden(self, x, path=None):
+        self.load(path)
+        x = x.permute(1,2,0,3)[0]
 
+        self.eval()
+        lstm_out, hidden = self.lstm(x)
+        print(lstm_out.size())
 
 
 
