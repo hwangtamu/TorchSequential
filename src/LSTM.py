@@ -8,7 +8,7 @@ class SequentialMNIST(nn.Module):
     def __init__(self, batch_size, hidden_size, lesion=None):
         super(SequentialMNIST, self).__init__()
         self.hidden_dim = hidden_size
-        self.lstm = nn.LSTM(28, self.hidden_dim)
+        self.lstm = nn.GRU(28, self.hidden_dim)
         self.hidden2label = nn.Linear(self.hidden_dim, 10)
         self.batch_size = batch_size
         self.model = None
@@ -16,7 +16,7 @@ class SequentialMNIST(nn.Module):
         self.lesion = lesion
         if self.lesion:
             self.blocked = torch.randperm(hidden_size)[:int(hidden_size*lesion)]
-            # print(self.blocked)
+            #print(self.blocked)
 
     def forward(self, x):
         x = x.permute(1,2,0,3)[0]
