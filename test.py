@@ -123,16 +123,24 @@ def lesion_test(n, lesion):
     return correct
 
 if __name__ == '__main__':
-    # test(model, device, test_loader)
-    res = []
-    for i in [4,6,8,10,12,16,32,64,128,256]:
-        main(i)
-    #     print(i)
-    #     tmp = []
-    #     for j in range(10):
-    #         a = lesion_test(i,0.7)
-    #         tmp+=[a/10000.]
-    #     m, s = np.mean(tmp), np.std(tmp)
-    #     print(m, s)
-    #     res+=[(m,s)]
-    # print(res)
+
+    v = [0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2,0.1,0]
+    scores = []
+    for l in v:
+        res = []
+
+        for i in [4,6,8,10,12,16,32,64,128,256]:
+            # main(i)
+            print(i)
+            tmp = []
+            for j in range(10):
+                a = lesion_test(i,l)
+                tmp+=[a/10000.]
+            m, s = np.mean(tmp), np.std(tmp)
+            print(m, s)
+            res+=[(m,s)]
+        scores+=[res]
+    for i,l in enumerate(v):
+        print(l,sorted(scores[i], key=lambda x:x[0]))
+    # for i in [4,6,8,10,12,16,32,64,128,256]:
+    #     main(i)
