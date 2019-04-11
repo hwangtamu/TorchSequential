@@ -14,7 +14,7 @@ class SequentialMNIST(nn.Module):
                  blocked=None):
         super(SequentialMNIST, self).__init__()
         self.hidden_dim = hidden_size
-        self.lstm = nn.LSTM(in_size, self.hidden_dim)
+        self.lstm = nn.GRU(in_size, self.hidden_dim)
         self.hidden2label = nn.Linear(self.hidden_dim, out_size)
         self.batch_size = batch_size
         self.model = None

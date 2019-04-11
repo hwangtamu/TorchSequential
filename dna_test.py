@@ -131,9 +131,12 @@ def test(model, device, test_loader):
             correct += pred.eq(target.view_as(pred)).sum().item()
 
     test_loss /= len(test_loader.dataset)
-    print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
+    print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.2f}%)\n'.format(
         test_loss, correct, len(test_loader.dataset),
         100. * correct / len(test_loader.dataset)))
+
+    return correct / len(test_loader.dataset)
+
 def main(hidden=256):
     epochs = 1000
 
@@ -141,22 +144,26 @@ def main(hidden=256):
 
     train_ = TensorDataset(splice.train['x'], splice.train['y'])
     test_ = TensorDataset(splice.test['x'], splice.test['y'])
-    train_loader = DataLoader(train_, batch_size=64)
-    test_loader = DataLoader(test_,batch_size=32)
+    train_loader = DataLoader(train_, batch_size=64, shuffle=False)
+    test_loader = DataLoader(test_,batch_size=32, shuffle=False)
     use_cuda = True
     device = torch.device("cuda" if use_cuda else "cpu")
-
+    path = './model/dna/' + str(hidden) + '_gru.model'
     model = SequentialMNIST(batch_size=64,
                             hidden_size=hidden,
                             in_size=4,
                             out_size=3).to(device)
-    optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
-    for epoch in range(1, epochs + 1):
-        train(model, device, train_loader, optimizer, epoch)
-        if epoch%10==0:
-            test(model, device, test_loader)
+    model.load(path)
+    # optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+    # for epoch in range(1, epochs + 1):
+    #     train(model, device, train_loader, optimizer, epoch)
+    #     if epoch%10==0:
+    #         test(model, device, test_loader)
+    #
+    # torch.save(model, './model/dna/'+str(hidden)+'_gru_d.model')
+    return test(model, device, test_loader)
 
-    torch.save(model, './model/dna/'+str(hidden)+'_lstm.model')
-
+a = []
 for i in [4,6,8,10,12,16,32,64,128,256]:
-    main(i)
+    a+=[main(i)]
+print(sorted(a))
