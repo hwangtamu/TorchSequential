@@ -5,11 +5,17 @@ from torch.autograd import Variable
 
 
 class SequentialMNIST(nn.Module):
-    def __init__(self, batch_size, hidden_size, lesion=None):
+    def __init__(self,
+                 batch_size,
+                 hidden_size,
+                 in_size=28,
+                 out_size=10,
+                 lesion=None,
+                 blocked=None):
         super(SequentialMNIST, self).__init__()
         self.hidden_dim = hidden_size
-        self.lstm = nn.GRU(28, self.hidden_dim, dropout=0.5)
-        self.hidden2label = nn.Linear(self.hidden_dim, 10)
+        self.lstm = nn.GRU(in_size, self.hidden_dim)
+        self.hidden2label = nn.Linear(self.hidden_dim, out_size)
         self.batch_size = batch_size
         self.model = None
         self.blocked = None
@@ -17,12 +23,15 @@ class SequentialMNIST(nn.Module):
         if self.lesion:
             self.blocked = torch.randperm(hidden_size)[:int(hidden_size*lesion)]
             #print(self.blocked)
+        if blocked is not None:
+            self.blocked = blocked
 
     def forward(self, x):
-        x = x.permute(1,2,0,3)[0]
+        x = x.permute(1,0,2)
+        # x = x.permute(1,2,0,3)[0]
         lstm_out, hidden = self.lstm(x)
         # print(lstm_out.size())
-        if self.lesion:
+        if self.lesion or self.blocked is not None:
             lstm_out[:, :,self.blocked] = 0
         y = self.hidden2label(lstm_out[-1])
         log_probs = F.log_softmax(y)
@@ -33,12 +42,13 @@ class SequentialMNIST(nn.Module):
     #     c0 = Variable(torch.zeros(1, self.batch_size, self.hidden_dim).cuda())
     #     return (h0, c0)
 
-    def load(self, path=None):
+    def load(self, path=None, blocked=None):
         if not self.model:
             if path:
                 self.model = torch.load(path)
                 self.lstm = self.model.lstm
                 self.hidden2label = self.model.hidden2label
+                self.blocked=blocked
             else:
                 raise AttributeError("Model not loaded.")
 
@@ -48,7 +58,8 @@ class SequentialMNIST(nn.Module):
         :return:
         """
         self.load(path)
-        x = x.permute(1,2,0,3)[0]
+        x = x.permute(1,0,2)
+        # x = x.permute(1,2,0,3)[0]
         # print(x.size())
         self.eval()
         lstm_out, hidden= self.lstm(x)
@@ -67,7 +78,9 @@ class SequentialMNIST(nn.Module):
 
     def get_hidden(self, x, path=None):
         self.load(path)
-        x = x.permute(1,2,0,3)[0]
+        x = x.permute(1,0,2)
+
+        # x = x.permute(1,2,0,3)[0]
 
         self.eval()
         lstm_out, hidden = self.lstm(x)
