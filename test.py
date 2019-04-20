@@ -63,7 +63,7 @@ def main(hidden=256):
                         help='input batch size for training (default: 64)')
     parser.add_argument('--test-batch-size', type=int, default=1000, metavar='N',
                         help='input batch size for testing (default: 1000)')
-    parser.add_argument('--epochs', type=int, default=50, metavar='N',
+    parser.add_argument('--epochs', type=int, default=200, metavar='N',
                         help='number of epochs to train (default: 50)')
     parser.add_argument('--lr', type=float, default=0.001, metavar='LR',
                         help='learning rate (default: 0.001)')
@@ -87,14 +87,14 @@ def main(hidden=256):
     train_loader = data.trainloader
     test_loader = data.testloader
 
-    model = SequentialMNIST(256, hidden).to(device)
+    model = SequentialMNIST(512, hidden).to(device)
     optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
 
     for epoch in range(1, args.epochs + 1):
         train(args, model, device, train_loader, optimizer, epoch)
         test(model, device, test_loader)
 
-    torch.save(model, './model/new/'+str(hidden)+'_lstm_.model')
+    torch.save(model, './model/new/'+str(hidden)+'_lstm.model')
 
 
 def lesion_test(n, lesion):

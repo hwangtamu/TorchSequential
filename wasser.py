@@ -7,19 +7,31 @@ import torch.optim as optim
 from torchvision import datasets, transforms
 from src.LSTM import SequentialMNIST
 from src.data import MNIST
+from src.LSTMencoder import Autoencoder
 from torch.autograd import Variable
 import numpy as np
 import matplotlib.pyplot as plt
 from torchsummary import  summary
 from collections import Counter
 from scipy.stats import wasserstein_distance
+from matplotlib.lines import Line2D
+
 #loss_function = nn.MSELoss()
 loss_function = nn.CrossEntropyLoss()
 bins = 100
 hist_range = [-1,1]
 labels = [str(x) for x in range(10)]
+from sklearn.manifold import TSNE
+from sklearn.decomposition import TruncatedSVD
+import torch.utils.data as utils
+import matplotlib.pylab as pl
 
 torch.manual_seed(0)
+colors = pl.cm.jet(np.linspace(0,1,10))
+
+legend_elements = [Line2D([0], [0], marker='o', color='w', label=str(i),
+                          markerfacecolor=c, markersize=5) for i,c in enumerate(colors)]
+
 
 def get_output(n,i):
     path = './model/new/'+str(n)+'_lstm.model'
@@ -100,8 +112,9 @@ def get_output(n,i):
 
         plt.grid()
         # plt.show()
-        plt.savefig('wasserstein_5/'+str(i)+'_'+str(sum(mat)/v)+'.png')
+        plt.savefig('wasserstein_6/'+str(i)+'_'+str(sum(mat)/v)+'.png')
         plt.close()
+
 
 def lesion_test(n, lesion):
     path = './model/new/' + str(n) + '_lstm.model'
@@ -147,6 +160,158 @@ def lesion_test(n, lesion):
             100. * correct / len(test_loader.dataset)))
     return correct/10000.
 
+
+def get_wasser(n,i=0):
+    path = './model/new/' + str(n) + '_lstm.model'
+    data = MNIST()
+    train_loader = data.trainloader
+    test_loader = data.testloader
+    device = torch.device("cuda")
+    x_ = []
+    y_ = []
+
+    with torch.no_grad():
+        model = SequentialMNIST(64, n).to(device)
+        model.load(path)
+        pca = TruncatedSVD(n_components=2)
+        for data, target in train_loader:
+            data, target = data.to(device), target.to(device)
+
+            hid = model.get_hidden(data)[0]
+            lab = model.show_pred(data)[1]
+            hid = hid.cpu().numpy() # 28*64*256
+            lab = lab.cpu().numpy()
+            print(lab.shape)
+            hid = hid.reshape(28*64, 256)
+            x2 = pca.fit_transform(hid)
+            x2 = x2.reshape(28, 64, 2)
+            for i in range(64):
+                for j in range(28):
+                    plt.scatter(x2[j,i,1], x2[j,i,0], c=colors[lab[i,j]])
+                plt.plot(x2[:,i,1], x2[:,i,0], color='c',alpha=0.2)
+            plt.show()
+
+
+def get_embed(n, i=0):
+    path = './model/new/' + str(n) + '_lstm.model'
+    path_ = './model/auto/256.model'
+
+    data = MNIST()
+
+    train_loader = data.trainloader
+    test_loader = data.testloader
+    device = torch.device("cuda")
+    x_ = []
+    y_ = []
+
+    with torch.no_grad():
+        model = SequentialMNIST(64, n).to(device)
+        model.load(path)
+        auto = Autoencoder().to(device)
+        auto = torch.load(path_)
+        fig, ax = plt.subplots()
+        tsne = TSNE(n_components=2, init='pca', random_state=0)
+        pca = TruncatedSVD(n_components=2)
+        for data, target in train_loader:
+            data, target = data.to(device), target.to(device)
+
+            hid = model.get_hidden(data)[0]
+            embed = auto.encoder(hid)
+            # print(embed.size())
+            lab = model.show_pred(data)[1]
+            hid = hid.cpu().numpy()  # 28*64*256
+            lab = lab.cpu().numpy()
+            print(lab.shape)
+            hid = hid.reshape(28 * 256, 256)
+            # x2 = tsne.fit_transform(hid)
+            # x2 = x2.reshape(28, 256, 2)
+            # state = embed[-1,:]
+            # state = x2[-1,:]
+            # x2 = embed.cpu().numpy()
+            dat = data.cpu().numpy()
+            dat=dat.squeeze()
+            dat = dat.reshape(256, 28*28)
+            # print(dat.shape)
+            d2 = tsne.fit_transform(dat)
+
+
+
+            for i in range(256):
+                # for j in range(28):
+                #     plt.scatter(x2[j, i, 1], x2[j, i, 0], c=color[:, lab[i, j]])
+                plt.scatter(d2[i,1], d2[i,0], c=colors[lab[i,-1]])
+                # plt.scatter(state[i,1],state[i,0], c=colors[lab[i, -1]])
+                # plt.plot(x2[:, i, 1], x2[:, i, 0], c=colors[lab[i, -1]], alpha=0.05)
+            plt.legend(handles=legend_elements)
+            plt.axis('off')
+            plt.show()
+            plt.clf()
+
+
+def train_auto(model):
+    data = np.loadtxt('states.csv')
+    tensor = torch.stack([torch.Tensor(x) for x in data])
+    dataset = utils.TensorDataset(tensor)
+    dataloader = utils.DataLoader(dataset, batch_size=1000)
+    device = torch.device("cuda")
+    # model = Autoencoder()
+    model.train()
+    optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+    loss_function = nn.MSELoss()
+    loss = None
+
+    for d in dataloader:
+        d = d[0].to(device)
+        optimizer.zero_grad()
+        output = model(d)
+        # print(d.size(), output.size())
+        loss = loss_function(output, d)
+        loss.backward()
+        optimizer.step()
+
+    print('Loss is: ' + str(loss.item()))
+
+
+
+
+def save_state():
+    path = './model/new/256_lstm.model'
+    data = MNIST()
+    train_loader = data.trainloader
+    test_loader = data.testloader
+    device = torch.device("cuda")
+    d = np.zeros((28, 3200, 256))
+    l = 0
+    with torch.no_grad():
+        model = SequentialMNIST(64, 256).to(device)
+        model.load(path)
+        pca = TruncatedSVD(n_components=2)
+        for data, target in train_loader:
+
+            data, target = data.to(device), target.to(device)
+
+            hid = model.get_hidden(data)[0]
+            # lab = model.show_pred(data)[1]
+            hid = hid.cpu().numpy() # 28,64,256
+            _,b,_ = hid.shape
+            d[:,l:l+b,:] = hid
+            l+=b
+            if l>=3200:
+                break
+
+    d = d.reshape(28*3200, 256)
+    np.savetxt('states.csv',d)
+
+def get_hist(arr):
+    a,b = arr.shape
+    corr = np.zeros((b,b))
+    for i in range(b):
+        for j in range(i+1,b):
+            d = wasserstein_distance(arr[:,i], arr[:,j])
+            corr[i][j] = d
+            corr[j][i] = d
+    return corr
+
 if __name__ == '__main__':
     # get_output(256)
     # for i in [4,6,8,10,12,16,32,64,128,256]:
@@ -169,5 +334,13 @@ if __name__ == '__main__':
     # # plt.legend()
     # plt.show()
     # for i in range(256):
-        # get_output(256,i)
-    lesion_test(256,16)
+    #     get_output(256,i)
+    # lesion_test(256,16)
+    # get_wasser(256)
+    # save_state()
+    # auto = Autoencoder().to(torch.device('cuda'))
+    # for i in range(50):
+    #     train_auto(auto)
+    #
+    # torch.save(auto, './model/auto/256.model')
+    get_embed(256)

@@ -14,16 +14,24 @@ y_dna_cd = [0.7163009404388715, 0.7178683385579937, 0.7852664576802508, 0.898119
 y_gru_c = [0.822884012539185, 0.9012539184952978, 0.9075235109717869, 0.9028213166144201, 0.9106583072100314, 0.9137931034482759, 0.9200626959247649, 0.9231974921630094, 0.9263322884012539, 0.9278996865203761]
 y_gru_cd = [0.6347962382445141, 0.7727272727272727, 0.8589341692789969, 0.8949843260188087, 0.8981191222570533, 0.9059561128526645, 0.9153605015673981, 0.9184952978056427, 0.9231974921630094, 0.9247648902821317]
 
+
+y_mnist_gru = [0.2869, 0.3285, 0.4458, 0.505, 0.5787, 0.7218, 0.9533, 0.9865, 0.9897, 0.9906]
+
+
+
+
 plt.plot(x, y_lstm_d, label='LSTM dropout=0.5')
 plt.plot(x, y_lstm, label='LSTM dropout=0')
 plt.plot(x, y_gru, label='GRU dropout=0.5')
 plt.plot(x, y_gru_d, label='GRU dropout=0')
-plt.plot(x, y_gru_c, label='Compressed LSTM')
-plt.plot(x, y_gru_cd, label='Compressed dropout LSTM')
+plt.plot(x, y_dna_c, label='Compressed LSTM')
+plt.plot(x, y_dna_cd, label='Compressed dropout LSTM')
+plt.plot(x, y_gru_c, label='Compressed GRU')
+plt.plot(x, y_gru_cd, label='Compressed dropout GRU')
 plt.xscale('log', basex=2)
 plt.xlabel('Number of Cells')
 plt.ylabel('Accuracy')
-plt.xlim(256,2)
+plt.xlim(256,4)
 plt.grid(True)
 plt.legend()
 plt.show()

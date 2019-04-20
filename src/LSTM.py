@@ -14,7 +14,7 @@ class SequentialMNIST(nn.Module):
                  blocked=None):
         super(SequentialMNIST, self).__init__()
         self.hidden_dim = hidden_size
-        self.lstm = nn.GRU(in_size, self.hidden_dim)
+        self.lstm = nn.LSTM(in_size, self.hidden_dim)
         self.hidden2label = nn.Linear(self.hidden_dim, out_size)
         self.batch_size = batch_size
         self.model = None
@@ -27,8 +27,8 @@ class SequentialMNIST(nn.Module):
             self.blocked = blocked
 
     def forward(self, x):
-        x = x.permute(1,0,2)
-        # x = x.permute(1,2,0,3)[0]
+        # x = x.permute(1,0,2)
+        x = x.permute(1,2,0,3)[0]
         lstm_out, hidden = self.lstm(x)
         # print(lstm_out.size())
         if self.lesion or self.blocked is not None:
@@ -58,8 +58,8 @@ class SequentialMNIST(nn.Module):
         :return:
         """
         self.load(path)
-        x = x.permute(1,0,2)
-        # x = x.permute(1,2,0,3)[0]
+        # x = x.permute(1,0,2)
+        x = x.permute(1,2,0,3)[0]
         # print(x.size())
         self.eval()
         lstm_out, hidden= self.lstm(x)
@@ -78,9 +78,9 @@ class SequentialMNIST(nn.Module):
 
     def get_hidden(self, x, path=None):
         self.load(path)
-        x = x.permute(1,0,2)
+        # x = x.permute(1,0,2)
 
-        # x = x.permute(1,2,0,3)[0]
+        x = x.permute(1,2,0,3)[0]
 
         self.eval()
         lstm_out, hidden = self.lstm(x)
